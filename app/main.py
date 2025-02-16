@@ -3,10 +3,12 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from sqlalchemy.orm import Session
-from app import crud, schemas, EmailUtil, models, enums
+from app import crud, schemas, models, enums
+from app import EmailUtil
+from app.dependencies import DbDep
 from .database import SessionLocal, engine
-from .schemas import EmployeeBase, EmployeeCreate, EmployeeOut, EmployeeGet
-from .api import employees
+from .schemas import EmployeeBase, EmployeeCreate, EmployeeOut, EmployeeGet, Token
+from .routers import employees
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
@@ -43,11 +45,6 @@ fake_users_db = {
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto") 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
 
 
 class TokenData(BaseModel):
@@ -156,17 +153,12 @@ async def get_employees():
     return [{"id": 1, "name": "John Doe", "position": "Manager"}]
 
 # Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+
 
 
 
 @app.post("/employee12/", response_model=EmployeeGet)
-async def create_user(employee: EmployeeCreate, db: Session = Depends(get_db)):
+async def create_user(employee: EmployeeCreate, db: DbDep):
     if(employee.password != employee.confirm_password):
         raise HTTPException(status_code=400,detail="Password most match !")
 
@@ -180,7 +172,7 @@ async def root():
     })
 
 @app.patch("/employee1",response_model=schemas.BaseOut)
-def confirm_account(confirAccountInput : schemas.ConfirmAccount,db: Session =Depends(get_db)):
+def confirm_account(confirAccountInput : schemas.ConfirmAccount,db: DbDep):
     confirmation_code = crud.get_confirmation_code(db,confirAccountInput.confirmation_code)
 
     if not confirmation_code:
@@ -441,7 +433,7 @@ def validate_employee_data(employee):
                 employee_to_add[field] = converted_val
     return (errors, warnings , wrong_cells)
 
-def valid_employees_data_and_upload(employees : list, force_upload : bool , db : Session = Depends(get_db)):
+def valid_employees_data_and_upload(employees : list, force_upload : bool , db : DbDep):
     try :
         errors = []
         warnings = []
@@ -543,13 +535,13 @@ def imporEmployess():
     pass
 
 @app.get("/employees/possibleImportFields")
-def getPossibleFilds(db:Session = Depends(get_db)):
+def getPossibleFilds(db:DbDep):
     return schemas.ImportPossibleFields(
         possible_fields= options,
     )
 
 @app.post('employees/csv')
-def upload(entry: schemas.MatchyUploadEntry, db : Session = Depends(get_db)):
+def upload(entry: schemas.MatchyUploadEntry, db : DbDep):
     employees = entry.lines
     if not employees :
         raise HTTPException(status_code = 400, detail = "Nothing to do, empty file")

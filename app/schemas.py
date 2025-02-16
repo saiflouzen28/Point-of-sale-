@@ -1,5 +1,5 @@
 from datetime import date
-from pydantic import BaseModel ,Field
+from pydantic import BaseModel, EmailStr ,Field
 from app.enums import Gender, ContractType, AccountStatus, RoleType
 from datetime import datetime
 from typing import List, Optional
@@ -15,6 +15,12 @@ class OurBaseModle(BaseModel):
 class BaseOut(OurBaseModle):
     detail : str 
     status_code : int   
+
+class PagedResponse(BaseOut):
+    page_number : int 
+    page_size : int 
+    total_pages: int 
+    total_records: int 
 
 class EmployeeBase(OurBaseModle):
     firstname : str
@@ -46,14 +52,24 @@ class EmployeeCreate(EmployeeBase):
     password : str | None = None
     confirm_password : str | None = None 
 
+class EmployeeEdit(EmployeeCreate):
+    acutal_Password: str | None = None 
 class EmployeeOut(EmployeeBase):
     id : int 
     created_on : datetime
 
+class EmployeesOut(PagedResponse):
+    list: List[EmployeeOut]
+
 class ConfirmAccount(OurBaseModle):
     confirmation_code : str 
 
-
+class ForgetPassword(OurBaseModle):
+    email: EmailStr
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    
 class MatchyCondition(OurBaseModle):
     property : ConditionProperty
     comparer : Optional[Comparer]

@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     #mail_password : str
     #mail_from : str
     #mail_server = str,
+    secret_key : str
+    algorithm : str
+    access_token_expire_min :int 
     class Config:
         env_file = '.env'
 

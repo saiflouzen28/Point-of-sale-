@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
-from .. import models, schemas, EmailUtil
+
+from .. import EmailUtil
+from .. import models, schemas
 
 async def create_employee(db: Session, employee: schemas.EmployeeBase):
     # fix me later when reading about security in fastapi
